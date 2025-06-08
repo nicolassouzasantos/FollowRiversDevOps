@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    build:
+      context: ./mysql
+    container_name: mysql-container
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=meubanco
+      - MYSQL_USER=nicklite1
+      - MYSQL_PASSWORD=Teste123@
+      - MYSQL_ROOT_PASSWORD=root123
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: ./
+    container_name: salvando-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - DB_URL=jdbc:mysql://mysql-db:3306/meubanco
+      - DB_USER=nicklite1
+      - DB_PASSWORD=Teste123@
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/meubanco
+      - SPRING_DATASOURCE_USERNAME=nicklite1
+      - SPRING_DATASOURCE_PASSWORD=Teste123@
+    networks:
+      - app-network
+    restart: on-failure
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
